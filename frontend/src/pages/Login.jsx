@@ -28,12 +28,13 @@ function Login() {
       });
       const data = await res.json();
 
-      if (res.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userName", data.name);
-        setMessage(`Welcome, ${data.name}! Login successful.`);
-        setIsError(false);
-      } else {
+     if (res.ok) {
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userName", data.name);
+  setMessage(`Welcome, ${data.name}! Redirecting...`);
+  setIsError(false);
+  setTimeout(() => navigate("/dashboard"), 1000);
+ } else {
         setMessage(data.error || "Login failed");
         setIsError(true);
       }
