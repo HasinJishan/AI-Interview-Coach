@@ -20,6 +20,7 @@ bcrypt = Bcrypt(app)
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client["interview_coach"]
 users_collection = db["users"]
+interviews_collection = db["interviews"]
 
 JWT_SECRET = os.getenv("JWT_SECRET")
 
@@ -120,6 +121,87 @@ Example format: ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Qu
         return jsonify({"questions": questions}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ---------- SUBMIT INTERVIEW FOR AI FEEDBACK ----------
+@app.route("/submit-interview", methods=["POST"])
+def submit_interview():
+    data = request.get_json()
+    interview_type = data.get("type", "HR")
+    category = data.get("category", "General")
+    qa_pairs = data.get("qa_pairs", [])
+    user_email = data.get("email")
+
+    qa_text = "\n\n".join(
+        [f"Q{i+1}: {qa['question']}\nA{i+1}: {qa['answer']}" for i, qa in enumerate(qa_pairs)]
+    )
+
+    prompt = f"""You are an expert interview coach. Review this {interview_type} interview for a {category} role.
+
+{qa_text}
+
+Return ONLY a JSON object with this exact structure, no extra text, no markdown:
+{{
+  "overall_score": <number 0-100>,
+  "summary": "<2-3 sentence overall assessment>",
+  "feedback": [
+    {{"question_number": 1, "score": <0-10>, "feedback": "<1-2 sentence specific feedback>"}},
+    ...one entry per question...
+  ],
+  "strengths": ["<strength 1>", "<strength 2>"],
+  "improvements": ["<improvement 1>", "<improvement 2>"]
+}}"""
+
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5
+        )
+        text = response.choices[0].message.content.strip()
+        text = text.replace("```json", "").replace("```", "").strip()
+        result = json.loads(text)
+
+        interview_record = {
+            "email": user_email,
+            "type": interview_type,
+            "category": category,
+            "qa_pairs": qa_pairs,
+            "overall_score": result.get("overall_score"),
+            "summary": result.get("summary"),
+            "feedback": result.get("feedback"),
+            "strengths": result.get("strengths"),
+            "improvements": result.get("improvements"),
+            "created_at": datetime.datetime.utcnow()
+        }
+        interviews_collection.insert_one(interview_record)
+
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- GET USER'S INTERVIEW HISTORY / STATS ----------
+@app.route("/my-stats", methods=["POST"])
+def my_stats():
+    data = request.get_json()
+    user_email = data.get("email")
+
+    interviews = list(interviews_collection.find({"email": user_email}).sort("created_at", -1))
+
+    total = len(interviews)
+    avg_score = 0
+    if total > 0:
+        avg_score = sum(i.get("overall_score", 0) for i in interviews) / total
+
+    for i in interviews:
+        i["_id"] = str(i["_id"])
+
+    return jsonify({
+        "total_interviews": total,
+        "average_score": round(avg_score, 1),
+        "recent_interviews": interviews[:5]
+    }), 200
 
 
 if __name__ == "__main__":

@@ -30,7 +30,8 @@ function Login() {
 
      if (res.ok) {
   localStorage.setItem("token", data.token);
-  localStorage.setItem("userName", data.name);
+localStorage.setItem("userName", data.name);
+localStorage.setItem("userEmail", email);
   setMessage(`Welcome, ${data.name}! Redirecting...`);
   setIsError(false);
   setTimeout(() => navigate("/dashboard"), 1000);

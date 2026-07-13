@@ -1,13 +1,37 @@
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import { useState, useEffect } from "react";
 
 function Dashboard() {
   const navigate = useNavigate();
   const userName = localStorage.getItem("userName") || "User";
+  const userEmail = localStorage.getItem("userEmail");
+  const [stats, setStats] = useState({ total_interviews: 0, average_score: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/my-stats`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userEmail }),
+        });
+        const data = await res.json();
+        if (res.ok) setStats(data);
+      } catch (err) {
+        console.error("Failed to load stats");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (userEmail) fetchStats();
+    else setLoading(false);
+  }, [userEmail]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     navigate("/login");
   };
 
@@ -42,9 +66,24 @@ function Dashboard() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-          <StatCard label="Resume Score" value="—" hint="Upload your resume" color="from-indigo-500 to-blue-500" />
-          <StatCard label="Interview Score" value="—" hint="Take your first mock interview" color="from-purple-500 to-pink-500" />
-          <StatCard label="Interviews Taken" value="0" hint="Get started below" color="from-teal-500 to-emerald-500" />
+          <StatCard
+            label="Resume Score"
+            value="—"
+            hint="Upload your resume"
+            color="from-indigo-500 to-blue-500"
+          />
+          <StatCard
+            label="Average Interview Score"
+            value={loading ? "..." : stats.average_score > 0 ? `${stats.average_score}` : "—"}
+            hint={stats.average_score > 0 ? "out of 100" : "Take your first mock interview"}
+            color="from-purple-500 to-pink-500"
+          />
+          <StatCard
+            label="Interviews Taken"
+            value={loading ? "..." : stats.total_interviews}
+            hint="Keep practicing!"
+            color="from-teal-500 to-emerald-500"
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

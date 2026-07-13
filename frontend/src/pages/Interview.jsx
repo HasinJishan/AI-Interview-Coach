@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Interview() {
-  const [step, setStep] = useState("setup"); // setup | loading | questions
+  const [step, setStep] = useState("setup");
   const [type, setType] = useState("HR");
   const [category, setCategory] = useState("");
   const [questions, setQuestions] = useState([]);
@@ -43,6 +43,38 @@ function Interview() {
     }
   };
 
+  const submitForFeedback = async (finalAnswers) => {
+    setStep("submitting");
+    const qa_pairs = questions.map((q, i) => ({
+      question: q,
+      answer: finalAnswers[i] || "(No answer provided)",
+    }));
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/submit-interview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          category,
+          qa_pairs,
+          email: localStorage.getItem("userEmail"),
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        navigate("/results", { state: { result: data, qa_pairs } });
+      } else {
+        setError(data.error || "Failed to get feedback");
+        setStep("questions");
+      }
+    } catch (err) {
+      setError("Server not reachable. Please try again.");
+      setStep("questions");
+    }
+  };
+
   const handleNext = () => {
     const updated = [...answers];
     updated[currentIndex] = currentAnswer;
@@ -52,9 +84,7 @@ function Interview() {
       setCurrentIndex(currentIndex + 1);
       setCurrentAnswer(updated[currentIndex + 1] || "");
     } else {
-      // Last question — will connect to feedback API on Day 7
-      alert("Interview complete! AI feedback coming in Day 7.");
-      navigate("/dashboard");
+      submitForFeedback(updated);
     }
   };
 
@@ -79,12 +109,8 @@ function Interview() {
           onSubmit={handleStart}
           className="relative z-10 bg-white/10 backdrop-blur-md border border-white/10 p-10 rounded-2xl shadow-2xl w-full max-w-md"
         >
-          <h1 className="text-3xl font-bold text-white mb-1 text-center">
-            Mock Interview
-          </h1>
-          <p className="text-slate-400 text-center mb-8 text-sm">
-            Choose your interview type to begin
-          </p>
+          <h1 className="text-3xl font-bold text-white mb-1 text-center">Mock Interview</h1>
+          <p className="text-slate-400 text-center mb-8 text-sm">Choose your interview type to begin</p>
 
           <label className="text-slate-300 text-sm mb-1 block">Interview Type</label>
           <select
@@ -123,6 +149,14 @@ function Interview() {
         </div>
       )}
 
+      {step === "submitting" && (
+        <div className="relative z-10 text-center">
+          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-lg">Analyzing your answers with AI...</p>
+          <p className="text-slate-400 text-sm mt-2">This may take a few seconds</p>
+        </div>
+      )}
+
       {step === "questions" && questions.length > 0 && (
         <div className="relative z-10 bg-white/10 backdrop-blur-md border border-white/10 p-10 rounded-2xl shadow-2xl w-full max-w-2xl">
           <div className="flex justify-between items-center mb-6">
@@ -131,19 +165,12 @@ function Interview() {
             </span>
             <div className="flex gap-1">
               {questions.map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-2 h-2 rounded-full ${
-                    i <= currentIndex ? "bg-indigo-400" : "bg-white/20"
-                  }`}
-                ></div>
+                <div key={i} className={`w-2 h-2 rounded-full ${i <= currentIndex ? "bg-indigo-400" : "bg-white/20"}`}></div>
               ))}
             </div>
           </div>
 
-          <h2 className="text-xl font-semibold text-white mb-6 leading-relaxed">
-            {questions[currentIndex]}
-          </h2>
+          <h2 className="text-xl font-semibold text-white mb-6 leading-relaxed">{questions[currentIndex]}</h2>
 
           <textarea
             value={currentAnswer}
@@ -152,6 +179,8 @@ function Interview() {
             rows={6}
             className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 mb-6 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
           />
+
+          {error && <p className="mb-4 text-sm text-center text-red-400">{error}</p>}
 
           <div className="flex justify-between">
             <button
@@ -165,7 +194,7 @@ function Interview() {
               onClick={handleNext}
               className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-indigo-500/30 transition"
             >
-              {currentIndex === questions.length - 1 ? "Finish" : "Next"}
+              {currentIndex === questions.length - 1 ? "Finish & Get Feedback" : "Next"}
             </button>
           </div>
         </div>
