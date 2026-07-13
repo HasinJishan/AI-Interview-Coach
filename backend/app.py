@@ -6,8 +6,12 @@ from dotenv import load_dotenv
 import jwt
 import datetime
 import os
+import json
+from groq import Groq
 
 load_dotenv()
+
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 app = Flask(__name__)
 CORS(app)
@@ -89,6 +93,33 @@ def login():
         "token": token,
         "name": user["name"]
     }), 200
+
+
+# ---------- GENERATE INTERVIEW QUESTIONS ----------
+@app.route("/generate-questions", methods=["POST"])
+def generate_questions():
+    data = request.get_json()
+    interview_type = data.get("type", "HR")
+    category = data.get("category", "General")
+
+    prompt = f"""Generate exactly 5 {interview_type} interview questions for a {category} role.
+Return ONLY a JSON array of strings, no extra text, no markdown formatting.
+Example format: ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Question 5?"]"""
+
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7
+        )
+        text = response.choices[0].message.content.strip()
+        text = text.replace("```json", "").replace("```", "").strip()
+
+        questions = json.loads(text)
+
+        return jsonify({"questions": questions}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
