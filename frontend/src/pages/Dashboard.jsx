@@ -52,6 +52,7 @@ function Dashboard() {
             title="Start Mock Interview"
             description="Practice HR or technical questions with AI feedback"
             buttonText="Start Interview"
+            onClick={() => navigate("/interview")}
           />
           <ActionCard
             title="Upload Resume"
@@ -75,12 +76,15 @@ function StatCard({ label, value, hint, color }) {
   );
 }
 
-function ActionCard({ title, description, buttonText }) {
+function ActionCard({ title, description, buttonText, onClick }) {
   return (
     <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6">
       <h3 className="text-white font-semibold text-lg mb-2">{title}</h3>
       <p className="text-slate-400 text-sm mb-5">{description}</p>
-      <button className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/30 transition">
+      <button
+        onClick={onClick}
+        className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/30 transition"
+      >
         {buttonText}
       </button>
     </div>
