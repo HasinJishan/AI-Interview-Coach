@@ -7,6 +7,7 @@ import jwt
 import datetime
 import os
 import json
+import re
 from groq import Groq
 
 load_dotenv()
@@ -23,6 +24,14 @@ users_collection = db["users"]
 interviews_collection = db["interviews"]
 
 JWT_SECRET = os.getenv("JWT_SECRET")
+
+
+def clean_json_text(text):
+    """Remove markdown fences and trailing commas that break json.loads()"""
+    text = text.replace("```json", "").replace("```", "").strip()
+    text = re.sub(r',(\s*[\]}])', r'\1', text)
+    return text
+
 
 @app.route("/")
 def home():
@@ -113,9 +122,7 @@ Example format: ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Qu
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7
         )
-        text = response.choices[0].message.content.strip()
-        text = text.replace("```json", "").replace("```", "").strip()
-
+        text = clean_json_text(response.choices[0].message.content.strip())
         questions = json.loads(text)
 
         return jsonify({"questions": questions}), 200
@@ -158,8 +165,7 @@ Return ONLY a JSON object with this exact structure, no extra text, no markdown:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5
         )
-        text = response.choices[0].message.content.strip()
-        text = text.replace("```json", "").replace("```", "").strip()
+        text = clean_json_text(response.choices[0].message.content.strip())
         result = json.loads(text)
 
         interview_record = {
