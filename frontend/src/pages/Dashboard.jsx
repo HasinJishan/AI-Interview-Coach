@@ -6,26 +6,40 @@ function Dashboard() {
   const userName = localStorage.getItem("userName") || "User";
   const userEmail = localStorage.getItem("userEmail");
   const [stats, setStats] = useState({ total_interviews: 0, average_score: 0 });
+  const [resumeScore, setResumeScore] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
+      if (!userEmail) {
+        setLoading(false);
+        return;
+      }
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/my-stats`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: userEmail }),
-        });
-        const data = await res.json();
-        if (res.ok) setStats(data);
+        const [statsRes, resumeRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/my-stats`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: userEmail }),
+          }),
+          fetch(`${import.meta.env.VITE_API_URL}/latest-resume`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: userEmail }),
+          }),
+        ]);
+        const statsData = await statsRes.json();
+        const resumeData = await resumeRes.json();
+
+        if (statsRes.ok) setStats(statsData);
+        if (resumeRes.ok && resumeData.has_resume) setResumeScore(resumeData.ats_score);
       } catch (err) {
-        console.error("Failed to load stats");
+        console.error("Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
     };
-    if (userEmail) fetchStats();
-    else setLoading(false);
+    fetchData();
   }, [userEmail]);
 
   const handleLogout = () => {
@@ -68,8 +82,8 @@ function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
           <StatCard
             label="Resume Score"
-            value="—"
-            hint="Upload your resume"
+            value={loading ? "..." : resumeScore !== null ? resumeScore : "—"}
+            hint={resumeScore !== null ? "ATS score" : "Upload your resume"}
             color="from-indigo-500 to-blue-500"
           />
           <StatCard
@@ -97,6 +111,7 @@ function Dashboard() {
             title="Upload Resume"
             description="Get AI-powered suggestions to improve your resume"
             buttonText="Upload Now"
+            onClick={() => navigate("/resume")}
           />
         </div>
       </div>

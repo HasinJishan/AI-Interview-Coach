@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Interview from "./pages/Interview";
 import Results from "./pages/Results";
+import ResumeUpload from "./pages/ResumeUpload";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -35,6 +36,14 @@ function App() {
   element={
     <ProtectedRoute>
       <Results />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/resume"
+  element={
+    <ProtectedRoute>
+      <ResumeUpload />
     </ProtectedRoute>
   }
 />

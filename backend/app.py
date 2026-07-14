@@ -9,10 +9,19 @@ import os
 import json
 import re
 from groq import Groq
+import cloudinary
+import cloudinary.uploader
+import PyPDF2
+import io
 
 load_dotenv()
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
 
 app = Flask(__name__)
 CORS(app)
@@ -22,6 +31,7 @@ client = MongoClient(os.getenv("MONGO_URI"))
 db = client["interview_coach"]
 users_collection = db["users"]
 interviews_collection = db["interviews"]
+resumes_collection = db["resumes"]
 
 JWT_SECRET = os.getenv("JWT_SECRET")
 
@@ -208,6 +218,105 @@ def my_stats():
         "average_score": round(avg_score, 1),
         "recent_interviews": interviews[:5]
     }), 200
+
+
+# ---------- UPLOAD & ANALYZE RESUME ----------
+@app.route("/upload-resume", methods=["POST"])
+def upload_resume():
+    if "resume" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files["resume"]
+    user_email = request.form.get("email")
+
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
+
+    if not file.filename.lower().endswith(".pdf"):
+        return jsonify({"error": "Only PDF files are supported"}), 400
+
+    try:
+        file_bytes = file.read()
+
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
+        resume_text = ""
+        for page in pdf_reader.pages:
+            resume_text += page.extract_text() or ""
+
+        if not resume_text.strip():
+            return jsonify({"error": "Could not extract text from PDF. Try a different file."}), 400
+
+        upload_result = cloudinary.uploader.upload(
+            file_bytes,
+            resource_type="raw",
+            folder="resumes",
+            public_id=f"{user_email}_{datetime.datetime.utcnow().timestamp()}"
+        )
+        file_url = upload_result.get("secure_url")
+
+        prompt = f"""You are an expert resume reviewer and ATS (Applicant Tracking System) specialist.
+Analyze this resume text and provide feedback.
+
+RESUME TEXT:
+{resume_text[:6000]}
+
+Return ONLY a JSON object with this exact structure, no extra text, no markdown:
+{{
+  "ats_score": <number 0-100>,
+  "summary": "<2-3 sentence overall assessment>",
+  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
+  "missing_skills": ["<skill or section 1>", "<skill or section 2>"],
+  "improvements": [
+    {{"area": "<e.g. Formatting, Content, Keywords>", "suggestion": "<specific actionable suggestion>"}},
+    ...3-5 entries...
+  ],
+  "grammar_issues": <number of grammar/spelling issues found, estimate>
+}}"""
+
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4
+        )
+        text = clean_json_text(response.choices[0].message.content.strip())
+        analysis = json.loads(text)
+
+        resume_record = {
+            "email": user_email,
+            "file_url": file_url,
+            "filename": file.filename,
+            "ats_score": analysis.get("ats_score"),
+            "summary": analysis.get("summary"),
+            "strengths": analysis.get("strengths"),
+            "missing_skills": analysis.get("missing_skills"),
+            "improvements": analysis.get("improvements"),
+            "grammar_issues": analysis.get("grammar_issues"),
+            "created_at": datetime.datetime.utcnow()
+        }
+        resumes_collection.insert_one(resume_record)
+
+        return jsonify(analysis), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- GET LATEST RESUME SCORE (for dashboard) ----------
+@app.route("/latest-resume", methods=["POST"])
+def latest_resume():
+    data = request.get_json()
+    user_email = data.get("email")
+
+    resume = resumes_collection.find_one(
+        {"email": user_email}, sort=[("created_at", -1)]
+    )
+
+    if not resume:
+        return jsonify({"has_resume": False}), 200
+
+    resume["_id"] = str(resume["_id"])
+    resume["has_resume"] = True
+    return jsonify(resume), 200
 
 
 if __name__ == "__main__":
