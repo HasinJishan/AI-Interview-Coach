@@ -32,6 +32,7 @@ db = client["interview_coach"]
 users_collection = db["users"]
 interviews_collection = db["interviews"]
 resumes_collection = db["resumes"]
+coding_collection = db["coding_submissions"]
 
 JWT_SECRET = os.getenv("JWT_SECRET")
 
@@ -317,6 +318,93 @@ def latest_resume():
     resume["_id"] = str(resume["_id"])
     resume["has_resume"] = True
     return jsonify(resume), 200
+
+
+# ---------- CODING QUESTIONS BANK ----------
+CODING_QUESTIONS = {
+    "Arrays": [
+        {"id": "arr1", "title": "Find the Maximum Element", "difficulty": "Easy", "description": "Write a function that takes an array of integers and returns the maximum value in it."},
+        {"id": "arr2", "title": "Reverse an Array", "difficulty": "Easy", "description": "Write a function that reverses an array in place without using built-in reverse functions."},
+        {"id": "arr3", "title": "Two Sum", "difficulty": "Medium", "description": "Given an array of integers and a target sum, return the indices of the two numbers that add up to the target."},
+    ],
+    "Strings": [
+        {"id": "str1", "title": "Check Palindrome", "difficulty": "Easy", "description": "Write a function that checks if a given string is a palindrome (reads the same forwards and backwards)."},
+        {"id": "str2", "title": "Count Vowels", "difficulty": "Easy", "description": "Write a function that counts the number of vowels in a given string."},
+        {"id": "str3", "title": "First Non-Repeating Character", "difficulty": "Medium", "description": "Find the first character in a string that doesn't repeat."},
+    ],
+    "Loops": [
+        {"id": "loop1", "title": "FizzBuzz", "difficulty": "Easy", "description": "Print numbers 1 to 100. For multiples of 3 print 'Fizz', for multiples of 5 print 'Buzz', for both print 'FizzBuzz'."},
+        {"id": "loop2", "title": "Sum of Digits", "difficulty": "Easy", "description": "Write a function that calculates the sum of digits of a given number."},
+    ],
+    "Stack": [
+        {"id": "stk1", "title": "Valid Parentheses", "difficulty": "Medium", "description": "Given a string of brackets, determine if the brackets are balanced using a stack."},
+    ],
+    "Queue": [
+        {"id": "q1", "title": "Implement Queue using Two Stacks", "difficulty": "Medium", "description": "Implement a queue data structure using two stacks."},
+    ],
+}
+
+@app.route("/coding-questions", methods=["GET"])
+def get_coding_questions():
+    return jsonify(CODING_QUESTIONS), 200
+
+
+# ---------- SUBMIT CODE FOR AI REVIEW ----------
+@app.route("/submit-code", methods=["POST"])
+def submit_code():
+    data = request.get_json()
+    question_title = data.get("question_title", "")
+    question_description = data.get("question_description", "")
+    code = data.get("code", "")
+    language = data.get("language", "Python")
+    user_email = data.get("email")
+
+    if not code.strip():
+        return jsonify({"error": "Please write some code before submitting"}), 400
+
+    prompt = f"""You are an expert coding interviewer reviewing a candidate's solution.
+
+Problem: {question_title}
+Description: {question_description}
+Language: {language}
+
+Candidate's Code:
+{code}
+
+Return ONLY a JSON object with this exact structure, no extra text, no markdown:
+{{
+  "correctness_score": <0-10, does the logic solve the problem correctly>,
+  "efficiency_score": <0-10, time/space complexity quality>,
+  "code_quality_score": <0-10, readability, naming, structure>,
+  "overall_verdict": "<Correct / Partially Correct / Incorrect>",
+  "feedback": "<2-4 sentences explaining what's good and what's wrong>",
+  "suggestions": ["<specific improvement 1>", "<specific improvement 2>"]
+}}"""
+
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3
+        )
+        text = clean_json_text(response.choices[0].message.content.strip())
+        result = json.loads(text)
+
+        coding_collection.insert_one({
+            "email": user_email,
+            "question_title": question_title,
+            "code": code,
+            "language": language,
+            "correctness_score": result.get("correctness_score"),
+            "efficiency_score": result.get("efficiency_score"),
+            "code_quality_score": result.get("code_quality_score"),
+            "overall_verdict": result.get("overall_verdict"),
+            "created_at": datetime.datetime.utcnow()
+        })
+
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

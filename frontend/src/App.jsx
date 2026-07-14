@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Interview from "./pages/Interview";
 import Results from "./pages/Results";
 import ResumeUpload from "./pages/ResumeUpload";
+import CodingPractice from "./pages/CodingPractice";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -47,8 +48,17 @@ function App() {
     </ProtectedRoute>
   }
 />
+<Route
+  path="/coding-practice"
+  element={
+    <ProtectedRoute>
+      <CodingPractice />
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </Router>
+
   );
 }
 

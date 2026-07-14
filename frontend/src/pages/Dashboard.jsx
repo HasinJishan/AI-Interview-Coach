@@ -100,7 +100,7 @@ function Dashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <ActionCard
             title="Start Mock Interview"
             description="Practice HR or technical questions with AI feedback"
@@ -112,6 +112,12 @@ function Dashboard() {
             description="Get AI-powered suggestions to improve your resume"
             buttonText="Upload Now"
             onClick={() => navigate("/resume")}
+          />
+          <ActionCard
+            title="Coding Practice"
+            description="Solve problems and get instant AI code review"
+            buttonText="Start Coding"
+            onClick={() => navigate("/coding-practice")}
           />
         </div>
       </div>
