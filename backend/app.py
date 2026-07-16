@@ -479,5 +479,51 @@ def change_password():
     return jsonify({"message": "Password changed successfully"}), 200
 
 
+# ---------- GET PROFILE OVERVIEW (for Profile page) ----------
+@app.route("/profile-overview", methods=["POST"])
+def profile_overview():
+    data = request.get_json()
+    email = data.get("email")
+
+    user = users_collection.find_one({"email": email})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    total_interviews = interviews_collection.count_documents({"email": email})
+    total_resumes = resumes_collection.count_documents({"email": email})
+    total_coding = coding_collection.count_documents({"email": email})
+
+    return jsonify({
+        "name": user.get("name"),
+        "email": user.get("email"),
+        "member_since": user.get("created_at").isoformat() if user.get("created_at") else None,
+        "total_interviews": total_interviews,
+        "total_resumes": total_resumes,
+        "total_coding": total_coding,
+    }), 200
+
+
+# ---------- DELETE ACCOUNT ----------
+@app.route("/delete-account", methods=["POST"])
+def delete_account():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    user = users_collection.find_one({"email": email})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if not bcrypt.check_password_hash(user["password"], password):
+        return jsonify({"error": "Incorrect password"}), 401
+
+    users_collection.delete_one({"email": email})
+    interviews_collection.delete_many({"email": email})
+    resumes_collection.delete_many({"email": email})
+    coding_collection.delete_many({"email": email})
+
+    return jsonify({"message": "Account deleted successfully"}), 200
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
