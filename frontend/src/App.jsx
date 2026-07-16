@@ -7,6 +7,8 @@ import Interview from "./pages/Interview";
 import Results from "./pages/Results";
 import ResumeUpload from "./pages/ResumeUpload";
 import CodingPractice from "./pages/CodingPractice";
+import History from "./pages/History";
+import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -53,6 +55,22 @@ function App() {
   element={
     <ProtectedRoute>
       <CodingPractice />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/history"
+  element={
+    <ProtectedRoute>
+      <History />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/profile"
+  element={
+    <ProtectedRoute>
+      <Profile />
     </ProtectedRoute>
   }
 />

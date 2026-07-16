@@ -63,12 +63,26 @@ function Dashboard() {
             Interview<span className="text-indigo-400">Coach</span>
           </span>
         </div>
-        <button
-          onClick={handleLogout}
-          className="bg-white/10 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/20 hover:bg-red-500/20 hover:border-red-400/40 transition"
-        >
-          Logout
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/profile")}
+            className="bg-white/10 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
+          >
+            Profile
+          </button>
+          <button
+            onClick={() => navigate("/history")}
+            className="bg-white/10 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
+          >
+            History
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-white/10 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/20 hover:bg-red-500/20 hover:border-red-400/40 transition"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       <div className="relative z-10 px-6 sm:px-12 py-8 max-w-6xl mx-auto">

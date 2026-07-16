@@ -407,5 +407,77 @@ Return ONLY a JSON object with this exact structure, no extra text, no markdown:
         return jsonify({"error": str(e)}), 500
 
 
+# ---------- GET FULL USER HISTORY ----------
+@app.route("/history", methods=["POST"])
+def get_history():
+    data = request.get_json()
+    user_email = data.get("email")
+
+    interviews = list(interviews_collection.find({"email": user_email}).sort("created_at", -1))
+    resumes = list(resumes_collection.find({"email": user_email}).sort("created_at", -1))
+    coding = list(coding_collection.find({"email": user_email}).sort("created_at", -1))
+
+    for i in interviews:
+        i["_id"] = str(i["_id"])
+    for r in resumes:
+        r["_id"] = str(r["_id"])
+    for c in coding:
+        c["_id"] = str(c["_id"])
+
+    return jsonify({
+        "interviews": interviews,
+        "resumes": resumes,
+        "coding": coding
+    }), 200
+
+
+# ---------- UPDATE PROFILE (NAME) ----------
+@app.route("/update-profile", methods=["POST"])
+def update_profile():
+    data = request.get_json()
+    email = data.get("email")
+    name = data.get("name")
+
+    if not email or not name:
+        return jsonify({"error": "Name is required"}), 400
+
+    result = users_collection.update_one(
+        {"email": email},
+        {"$set": {"name": name}}
+    )
+
+    if result.matched_count == 0:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify({"message": "Profile updated successfully"}), 200
+
+
+# ---------- CHANGE PASSWORD ----------
+@app.route("/change-password", methods=["POST"])
+def change_password():
+    data = request.get_json()
+    email = data.get("email")
+    current_password = data.get("currentPassword")
+    new_password = data.get("newPassword")
+
+    user = users_collection.find_one({"email": email})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if not bcrypt.check_password_hash(user["password"], current_password):
+        return jsonify({"error": "Current password is incorrect"}), 401
+
+    if len(new_password) < 6:
+        return jsonify({"error": "New password must be at least 6 characters"}), 400
+
+    hashed_new_password = bcrypt.generate_password_hash(new_password).decode("utf-8")
+    users_collection.update_one(
+        {"email": email},
+        {"$set": {"password": hashed_new_password}}
+    )
+
+    return jsonify({"message": "Password changed successfully"}), 200
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
