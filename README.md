@@ -58,7 +58,7 @@ MongoDB Atlas (Database), Groq AI API (AI Inference), Cloudinary (File Storage)
 
 | Home | Dashboard |
 |------|-----------|
-| ![Home](screenshots/home.png) | ![Dashboard](screenshots/dashboard.png) |
+| ![Home](screenshots/Home.png) | ![Dashboard](screenshots/Dashboard.png) |
 
 | Interview Results | Resume Analysis |
 |--------------------|------------------|
