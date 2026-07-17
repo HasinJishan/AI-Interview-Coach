@@ -524,6 +524,69 @@ def delete_account():
 
     return jsonify({"message": "Account deleted successfully"}), 200
 
+# ---------- ADMIN: GET ALL USERS ----------
+@app.route("/admin/users", methods=["POST"])
+def admin_get_users():
+    data = request.get_json()
+    admin_email = data.get("admin_email")
+
+    # Simple admin check - only this email can access admin routes
+    if admin_email != os.getenv("ADMIN_EMAIL"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    users = list(users_collection.find({}, {"password": 0}).sort("created_at", -1))
+    for u in users:
+        u["_id"] = str(u["_id"])
+
+    return jsonify({"users": users, "total": len(users)}), 200
+
+
+# ---------- ADMIN: PLATFORM ANALYTICS ----------
+@app.route("/admin/analytics", methods=["POST"])
+def admin_analytics():
+    data = request.get_json()
+    admin_email = data.get("admin_email")
+
+    if admin_email != os.getenv("ADMIN_EMAIL"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    total_users = users_collection.count_documents({})
+    total_interviews = interviews_collection.count_documents({})
+    total_resumes = resumes_collection.count_documents({})
+    total_coding = coding_collection.count_documents({})
+
+    all_interviews = list(interviews_collection.find({}, {"overall_score": 1}))
+    avg_interview_score = 0
+    if all_interviews:
+        scores = [i.get("overall_score", 0) for i in all_interviews if i.get("overall_score") is not None]
+        avg_interview_score = round(sum(scores) / len(scores), 1) if scores else 0
+
+    return jsonify({
+        "total_users": total_users,
+        "total_interviews": total_interviews,
+        "total_resumes": total_resumes,
+        "total_coding": total_coding,
+        "avg_interview_score": avg_interview_score
+    }), 200
+
+
+# ---------- ADMIN: DELETE A USER ----------
+@app.route("/admin/delete-user", methods=["POST"])
+def admin_delete_user():
+    data = request.get_json()
+    admin_email = data.get("admin_email")
+    target_email = data.get("target_email")
+
+    if admin_email != os.getenv("ADMIN_EMAIL"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    users_collection.delete_one({"email": target_email})
+    interviews_collection.delete_many({"email": target_email})
+    resumes_collection.delete_many({"email": target_email})
+    coding_collection.delete_many({"email": target_email})
+
+    return jsonify({"message": "User deleted successfully"}), 200
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

@@ -9,6 +9,7 @@ import ResumeUpload from "./pages/ResumeUpload";
 import CodingPractice from "./pages/CodingPractice";
 import History from "./pages/History";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -71,6 +72,15 @@ function App() {
   element={
     <ProtectedRoute>
       <Profile />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/admin"
+  element={
+    <ProtectedRoute>
+      <Admin />
     </ProtectedRoute>
   }
 />
