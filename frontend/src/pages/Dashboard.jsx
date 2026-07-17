@@ -64,7 +64,7 @@ function Dashboard() {
           </span>
         </div>
         <div className="flex gap-2 flex-wrap">
-  {userEmail === "your_admin_email@example.com" && (
+  {userEmail === "hasinjishan17@gmail.com" && (
     <button
       onClick={() => navigate("/admin")}
       className="bg-red-500/20 backdrop-blur-sm text-red-300 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-red-500/30 hover:bg-red-500/30 transition"
