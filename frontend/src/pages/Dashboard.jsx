@@ -64,25 +64,33 @@ function Dashboard() {
           </span>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => navigate("/profile")}
-            className="bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
-          >
-            Profile
-          </button>
-          <button
-            onClick={() => navigate("/history")}
-            className="bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
-          >
-            History
-          </button>
-          <button
-            onClick={handleLogout}
-            className="bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20 hover:bg-red-500/20 hover:border-red-400/40 transition"
-          >
-            Logout
-          </button>
-        </div>
+  {userEmail === "your_admin_email@example.com" && (
+    <button
+      onClick={() => navigate("/admin")}
+      className="bg-red-500/20 backdrop-blur-sm text-red-300 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-red-500/30 hover:bg-red-500/30 transition"
+    >
+      Admin
+    </button>
+  )}
+  <button
+    onClick={() => navigate("/profile")}
+    className="bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
+  >
+    Profile
+  </button>
+  <button
+    onClick={() => navigate("/history")}
+    className="bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
+  >
+    History
+  </button>
+  <button
+    onClick={handleLogout}
+    className="bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20 hover:bg-red-500/20 hover:border-red-400/40 transition"
+  >
+    Logout
+  </button>
+</div>
       </div>
 
       <div className="relative z-10 px-6 sm:px-12 py-8 max-w-6xl mx-auto">
