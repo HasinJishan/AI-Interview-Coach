@@ -54,31 +54,31 @@ function Dashboard() {
       <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
 
-      <div className="relative z-10 flex items-center justify-between px-6 sm:px-12 py-5">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-12 py-4 sm:py-5">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0">
             AI
           </div>
-          <span className="text-white font-semibold text-lg">
+          <span className="text-white font-semibold text-base sm:text-lg">
             Interview<span className="text-indigo-400">Coach</span>
           </span>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => navigate("/profile")}
-            className="bg-white/10 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
+            className="bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
           >
             Profile
           </button>
           <button
             onClick={() => navigate("/history")}
-            className="bg-white/10 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
+            className="bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20 hover:bg-white/20 transition"
           >
             History
           </button>
           <button
             onClick={handleLogout}
-            className="bg-white/10 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/20 hover:bg-red-500/20 hover:border-red-400/40 transition"
+            className="bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20 hover:bg-red-500/20 hover:border-red-400/40 transition"
           >
             Logout
           </button>
